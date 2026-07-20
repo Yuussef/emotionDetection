@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Emotion Detection App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            resize: vertical;
+            min-height: 120px;
+            margin-bottom: 15px;
+            font-family: Arial, sans-serif;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.5);
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .result {
+            margin-top: 25px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 5px;
+            display: none;
+        }
+        .result.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .emotion-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        .emotion-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        .confidence {
+            font-size: 14px;
+            color: #999;
+        }
+        .error {
+            background: #fee;
+            border: 1px solid #fcc;
+            color: #c33;
+            padding: 12px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            margin-top: 10px;
+        }
+        .loading.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎭 Emotion Detection</h1>
+        <p class="subtitle">Powered by IBM Watson NLP</p>
+        
+        <textarea id="textInput" placeholder="Enter your text here..." maxlength="5000"></textarea>
+        
+        <button onclick="analyzeEmotion()">Detect Emotion</button>
+        
+        <div class="loading" id="loading">
+            <p>Analyzing...</p>
+        </div>
+        
+        <div class="result" id="result">
+            <div class="emotion-label">Detected Emotion:</div>
+            <div class="emotion-value" id="emotionName"></div>
+            <div class="confidence">
+                Confidence: <span id="emotionScore"></span>
+            </div>
+        </div>
+        
+        <div class="error" id="error" style="display:none;"></div>
+    </div>
+
+    <script>
+        function analyzeEmotion() {
+            const text = document.getElementById('textInput').value.trim();
+            const resultDiv = document.getElementById('result');
+            const errorDiv = document.getElementById('error');
+            const loadingDiv = document.getElementById('loading');
+            
+            if (!text) {
+                errorDiv.textContent = '❌ Please enter some text!';
+                errorDiv.style.display = 'block';
+                resultDiv.classList.remove('show');
+                return;
+            }
+            
+            errorDiv.style.display = 'none';
+            loadingDiv.classList.add('show');
+            resultDiv.classList.remove('show');
+            
+            fetch('/detect', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({text: text})
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingDiv.classList.remove('show');
+                if (data.error) {
+                    errorDiv.textContent = '❌ Error: ' + data.error;
+                    errorDiv.style.display = 'block';
+                } else {
+                    document.getElementById('emotionName').textContent = data.emotion;
+                    document.getElementById('emotionScore').textContent = (data.score * 100).toFixed(1) + '%';
+                    resultDiv.classList.add('show');
+                }
+            })
+            .catch(error => {
+                loadingDiv.classList.remove('show');
+                errorDiv.textContent = '❌ Error: ' + error;
+                errorDiv.style.display = 'block';
+            });
+        }
+        
+        document.getElementById('textInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                analyzeEmotion();
+            }
+        });
+    </script>
+</body>
+</html>
